@@ -102,7 +102,8 @@ class Vector:
         return out
     
     def softmax(self) -> "Vector":
-        exps = [exp(x) for x in self.data]
+        m = max(self.data)
+        exps = [exp(x - m) for x in self.data]
         divisor = sum(exps)
         out = Vector([exp / divisor for exp in exps], self.requires_grad, (self,))
 
@@ -121,6 +122,17 @@ class Vector:
                     
                     self.grad.data = [x + sum(y * z for y, z in zip(row, out.grad.data)) for x, row in zip(self.grad.data, jacobian)]
             out._backward_fn = softmaxbackward_fn
+
+        return out
+    
+    def sum(self) -> "Vector":
+        out = Vector([sum(self.data)], self.requires_grad, (self,))
+
+        if self.requires_grad:
+            def sumbackward_fn() -> None:
+                if self.requires_grad:
+                    self.grad.data = [x + out.grad.data[0] for x in self.grad.data]
+            out._backward_fn = sumbackward_fn
 
         return out
     
@@ -262,6 +274,9 @@ class Vector:
 
     def __len__(self) -> int:
         return len(self.data)
+    
+    def __max__(self) -> float:
+        return max(self.data)
 
     def __repr__(self) -> str:
         if self.requires_grad:

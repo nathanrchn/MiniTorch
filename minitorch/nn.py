@@ -15,8 +15,11 @@ class Module(ABC):
         elif issubclass(type(value), Module):
             for k, v in value._parameters.items():
                 self._parameters[f"{name}.{k}"] = v
-        else:
-            super().__setattr__(name, value)
+        
+        super().__setattr__(name, value)
+
+    def __call__(self, x: Vector) -> Vector:
+        return self.forward(x)
 
     def parameters(self) -> list[Vector]:
         return list(self._parameters.values())
@@ -37,7 +40,7 @@ class Linear(Module):
     def forward(self, x: Vector) -> Vector:
         out = Vector([0.0] * len(self.weight), requires_grad=True)
         for i, w in enumerate(self.weight):
-            out[i] = x.dot(w)
+            out.data[i] = x.dot(w).data[0]
         if self.bias:
             out += self.bias_vector
         return out
