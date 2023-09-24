@@ -69,6 +69,17 @@ class Vector:
     
         return out
     
+    def log(self) -> "Vector":
+        out = Vector([log(x) for x in self.data], self.requires_grad, (self,))
+
+        if self.requires_grad:
+            def logbackward_fn() -> None:
+                if self.requires_grad:
+                    self.grad.data = [x + (1 / y) * z for x, y, z in zip(self.grad.data, self.data, out.grad.data)]
+            out._backward_fn = logbackward_fn
+
+        return out
+    
     def relu(self) -> "Vector":
         out = Vector([max(0.0, x_i) for x_i in self.data], self.requires_grad, (self,))
 
@@ -79,20 +90,27 @@ class Vector:
 
         return out
     
-    def softmax(self) -> "Vector":
-        denominator: float = sum(exp(x) for x in self.data)
-        out = Vector([exp(x) / denominator for x in self.data], self.requires_grad, (self,))
+    def sigmoid(self) -> "Vector":
+        out = Vector([(1 / (1 + exp(-x))) for x in self.data], self.requires_grad, (self,))
 
         if self.requires_grad:
-            def softmaxbackward_fn() -> None:
+            def sigmoidbackward_fn() -> None:
                 if self.requires_grad:
                     self.grad.data = [x + y * (1 - y) * z for x, y, z in zip(self.grad.data, out.data, out.grad.data)]
-            out._backward_fn = softmaxbackward_fn
+            out._backward_fn = sigmoidbackward_fn
 
         return out
     
     def tanh(self):
-        pass
+        out = Vector([(exp(x) - exp(-x))/(exp(x) + exp(-x)) for x in self.data], self.requires_grad, (self,))
+
+        if self.requires_grad:
+            def tanhbackward_fn() -> None:
+                if self.requires_grad:
+                    self.grad.data = [x + (1 - y ** 2) * z for x, y, z in zip(self.grad.data, out.data, out.grad.data)]
+            out._backward_fn = tanhbackward_fn
+
+        return out
     
     def zero_grad(self) -> None:
         if self.requires_grad:

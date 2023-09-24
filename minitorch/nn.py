@@ -1,7 +1,29 @@
-from vector import Vector
+from abc import ABC
+from .vector import Vector
 
-class Linear:
+class Module(ABC):
+    def __init__(self) -> None:
+        super().__setattr__("_parameters", dict())
+
+    def __setattr__(self, name: str, value: object) -> None:
+        if issubclass(type(value), Vector):
+            self._parameters[name] = value
+        elif issubclass(type(value), list):
+            for i, v in enumerate(value):
+                if issubclass(type(v), Vector):
+                    self._parameters[f"{name}.{i}"] = v
+        elif issubclass(type(value), Module):
+            for k, v in value._parameters.items():
+                self._parameters[f"{name}.{k}"] = v
+        else:
+            super().__setattr__(name, value)
+
+    def parameters(self) -> list[Vector]:
+        return list(self._parameters.values())
+
+class Linear(Module):
     def __init__(self, in_features: int, out_features: int, bias: bool = True) -> None:
+        super().__init__()
         self.bias = bias
         self.weight: list[Vector] = [Vector.randn(in_features, requires_grad=True) for _ in range(out_features)]
 
