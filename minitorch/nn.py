@@ -1,5 +1,5 @@
-from abc import ABC
 from .vector import Vector
+from abc import ABC, abstractmethod
 
 class Module(ABC):
     def __init__(self) -> None:
@@ -20,6 +20,10 @@ class Module(ABC):
 
     def parameters(self) -> list[Vector]:
         return list(self._parameters.values())
+    
+    @abstractmethod
+    def forward(self, x: Vector) -> Vector:
+        pass
 
 class Linear(Module):
     def __init__(self, in_features: int, out_features: int, bias: bool = True) -> None:
@@ -37,9 +41,3 @@ class Linear(Module):
         if self.bias:
             out += self.bias_vector
         return out
-    
-    def parameters(self) -> list[Vector]:
-        params: list[Vector] = self.weight
-        if self.bias:
-            params.append(self.bias_vector)
-        return params

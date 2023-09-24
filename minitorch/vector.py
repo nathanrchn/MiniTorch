@@ -101,6 +101,29 @@ class Vector:
 
         return out
     
+    def softmax(self) -> "Vector":
+        exps = [exp(x) for x in self.data]
+        divisor = sum(exps)
+        out = Vector([exp / divisor for exp in exps], self.requires_grad, (self,))
+
+        if self.requires_grad:
+            def softmaxbackward_fn() -> None:
+                if self.requires_grad:
+                    jacobian = []
+                    for i in range(len(self.data)):
+                        row = []
+                        for j in range(len(self.data)):
+                            if i == j:
+                                row.append(out.data[i] * (1 - out.data[i]))
+                            else:
+                                row.append(-out.data[i] * out.data[j])
+                        jacobian.append(row)
+                    
+                    self.grad.data = [x + sum(y * z for y, z in zip(row, out.grad.data)) for x, row in zip(self.grad.data, jacobian)]
+            out._backward_fn = softmaxbackward_fn
+
+        return out
+    
     def tanh(self):
         out = Vector([(exp(x) - exp(-x))/(exp(x) + exp(-x)) for x in self.data], self.requires_grad, (self,))
 
